@@ -29,7 +29,7 @@ pipeline {
         
         stage('Checkout from Git') {                        
             steps {                                       
-                git branch: 'main', url: 'https://github.com/yash509/DevSecOps-CountryBank-WebApp-Deployment.git'
+                git branch: 'main', url: 'https://github.com/yash509/DevSecOps-JS-BMICal-WebApp-Deployment.git'
             }
         }
         
@@ -160,7 +160,7 @@ pipeline {
                 script{
                     //dir('Band Website') {
                         withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){   
-                            sh "docker build -t countrybank ." 
+                            sh "docker build -t jsbmiwebapp ." 
                             
                         //}
                     }
@@ -173,7 +173,7 @@ pipeline {
                 script{
                     //dir('Band Website') {
                         withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
-                            sh "docker tag countrybank yash5090/countrybank:latest " 
+                            sh "docker tag jsbmiwebapp yash5090/jsbmiwebapp:latest " 
                         //}
                     }
                 }
@@ -182,7 +182,7 @@ pipeline {
         
         stage('Docker Image Scanning') { 
             steps { 
-                sh "trivy image --format table -o trivy-image-report.html yash5090/countrybank:latest" 
+                sh "trivy image --format table -o trivy-image-report.html yash5090/jsbmiwebapp:latest" 
             } 
         } 
         
@@ -191,7 +191,7 @@ pipeline {
                 script{
                     //dir('Band Website') {
                         withDockerRegistry(credentialsId: 'docker', toolName: 'docker') {
-                            sh "docker push yash5090/countrybank:latest "
+                            sh "docker push yash5090/jsbmiwebapp:latest "
                         //}
                     }
                 }
@@ -202,10 +202,10 @@ pipeline {
             steps {
                 script{
                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
-                       sh 'docker-scout quickview yash5090/countrybank:latest'
-                       sh 'docker-scout cves yash5090/countrybank:latest'
-                       sh 'docker-scout recommendations yash5090/countrybank:latest'
-                       sh 'docker-scout attestation yash5090/countrybank:latest'
+                       sh 'docker-scout quickview yash5090/jsbmiwebapp:latest'
+                       sh 'docker-scout cves yash5090/jsbmiwebapp:latest'
+                       sh 'docker-scout recommendations yash5090/jsbmiwebapp:latest'
+                       sh 'docker-scout attestation yash5090/jsbmiwebapp:latest'
                    }
                 }   
             }
@@ -215,7 +215,7 @@ pipeline {
         steps {
                 withCredentials([string(credentialsId: 'snyk', variable: 'snyk')]) {
                    sh 'snyk auth $snyk'
-                   sh 'snyk container test yash5090/countrybank:latest > snykvulnerabilityreport.txt --report || true '
+                   sh 'snyk container test yash5090/jsbmiwebapp:latest > snykvulnerabilityreport.txt --report || true '
                 }
             }
         }    
@@ -223,15 +223,15 @@ pipeline {
         stage("TRIVY"){
             steps{
                 //dir('Band Website') {
-                    sh "trivy image yash5090/countrybank:latest > trivyimage.txt"   
+                    sh "trivy image yash5090/jsbmiwebapp:latest > trivyimage.txt"   
                 //}
             }
         }
 		
 		stage("Anchore Grype Docker Image Vulnerability Scan"){
             steps{
-                sh "docker run --rm anchore/grype:v0.82.0 yash5090/countrybank:latest"
-                sh "docker run --rm anchore/grype:v0.82.0 -o json yash5090/countrybank:latest > grypescanreport.json"
+                sh "docker run --rm anchore/grype:v0.82.0 yash5090/jsbmiwebapp:latest"
+                sh "docker run --rm anchore/grype:v0.82.0 -o json yash5090/jsbmiwebapp:latest > grypescanreport.json"
             }
         }
         
@@ -239,7 +239,7 @@ pipeline {
             steps {
                 script{
                   withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){
-                      sh 'docker-scout sbom --format list yash5090/countrybank:latest' // docker-scout sbom yash5090/countrybank:latest
+                      sh 'docker-scout sbom --format list yash5090/jsbmiwebapp:latest' // docker-scout sbom yash5090/jsbmiwebapp:latest
                     }
                 }   
             }
@@ -273,15 +273,15 @@ pipeline {
 
         stage ("Remove Docker Container") {
             steps{
-                sh "docker stop countrybank | true"
-                sh "docker rm countrybank | true"
+                sh "docker stop jsbmiwebapp | true"
+                sh "docker rm jsbmiwebapp | true"
              }
         }
         
         stage('Deploy to Docker Container'){
             steps{
                 //dir('BMI Calculator (JS)') {
-                    sh 'docker run -d --name countrybank -p 8000:8000 yash5090/countrybank:latest' 
+                    sh 'docker run -d --name jsbmiwebapp -p 5000:80 yash5090/jsbmiwebapp:latest' 
                 //}
             }
         }
