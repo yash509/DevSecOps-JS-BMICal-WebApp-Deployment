@@ -12,7 +12,7 @@ pipeline {
     }
     
     environment {
-        IMAGE_NAME = "yash5090/bsc-bkgrnd"
+        IMAGE_NAME = "yash5090/jsbmiwebapp"
         TAG = "${params.DOCKER_TAG}" 
         SCANNER_HOME = tool 'sonar-scanner'
     }
@@ -284,15 +284,15 @@ pipeline {
 
         stage ("Remove Docker Container") {
             steps{
-                sh "docker stop bsc-bkgrnd | true"
-                sh "docker rm bsc-bkgrnd | true"
+                sh "docker stop jsbmiwebapp | true"
+                sh "docker rm jsbmiwebapp | true"
              }
         }
         
         stage('Deploy to Docker Container'){
             steps{
                 //dir('BMI Calculator (JS)') {
-                    sh "docker run -d --name bsc-bkgrnd -p 5000:80 ${IMAGE_NAME}:${TAG}" 
+                    sh "docker run -d --name jsbmiwebapp -p 5000:80 ${IMAGE_NAME}:${TAG}" 
                 //}
             }
         }
@@ -353,7 +353,7 @@ pipeline {
                     // Always switch traffic based on DEPLOY_ENV
                     withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
                         sh '''
-                            kubectl patch service bsc-bkgrnd-service -p "{\\"spec\\": {\\"selector\\": {\\"app\\": \\"bsc-bkgrnd\\", \\"version\\": \\"''' + newEnv + '''\\"}}}"
+                            kubectl patch service jsbmiwebapp-service -p "{\\"spec\\": {\\"selector\\": {\\"app\\": \\"jsbmiwebapp\\", \\"version\\": \\"''' + newEnv + '''\\"}}}"
                         '''
                     }
                     echo "Traffic has been switched to the ${newEnv} environment."
