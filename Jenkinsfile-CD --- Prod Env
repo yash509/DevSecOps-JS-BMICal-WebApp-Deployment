@@ -13,6 +13,17 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/yash509/DevSecOps-JS-BMICal-WebApp-Deployment.git'
             }
         }
+		
+		stage ('Snyk Kubernetes-Config Files Vulnerablity Scan') {
+            steps {
+			    withCredentials([string(credentialsId: 'snyk', variable: 'snyk')]) {
+                sh 'snyk auth $snyk'
+                sh 'snyk iac test deployment.yaml --report > Deployment-filevulnerabilityreport.txt || true'
+                sh 'snyk iac test service.yaml --report > Service-filevulnerabilityreport.txt || true'
+				sh 'snyk iac test nwp.yaml --report > NetworkPolicy-filevulnerabilityreport.txt || true'
+			    }
+            }
+        }
         
         stage("Sanity Check") {
             steps {
@@ -84,7 +95,7 @@ pipeline {
                 from: 'jenkins@example.com', 
                 replyTo: 'jenkins@example.com', 
                 mimeType: 'text/html', 
-                attachmentsPattern: 'trivy-image-report.html, trivyfs.txt, trivyimage.txt') 
+                attachmentsPattern: 'Deployment-filevulnerabilityreport.txt, Service-filevulnerabilityreport.txt, NetworkPolicy-filevulnerabilityreport.txt') 
             } 
         } 
     }
