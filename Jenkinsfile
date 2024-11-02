@@ -12,7 +12,7 @@ pipeline {
     }
     
     environment {
-        IMAGE_NAME = "yash5090/jsbmiwebapp"
+        IMAGE_NAME = "yash5090/bsc-bkgrnd"
         TAG = "${params.DOCKER_TAG}" 
         SCANNER_HOME = tool 'sonar-scanner'
     }
@@ -219,17 +219,18 @@ pipeline {
                    }
                 }   
             }
-        }
-
-        stage('Snyk Docker Image Vulnerability Scannning') {
-        steps {
+        }  
+        
+		stage('Snyk Docker Image/Container Vulnerability Scannning') {
+		steps {
                 withCredentials([string(credentialsId: 'snyk', variable: 'snyk')]) {
                    sh 'snyk auth $snyk'
-                   sh "snyk container test ${IMAGE_NAME}:${TAG} > snykvulnerabilityreport.txt --report || true"
+                   sh 'snyk container test ${IMAGE_NAME}:${TAG} > snyk-containertest-vulnerabilityreport.txt --report || true '
+                   sh 'snyk container monitor ${IMAGE_NAME}:${TAG} > snyk-containermonitor-vulnerabilityreport.txt || true'
                 }
             }
-        }    
-        
+        } 
+		
         stage("TRIVY"){
             steps{
                 //dir('Band Website') {
@@ -283,15 +284,15 @@ pipeline {
 
         stage ("Remove Docker Container") {
             steps{
-                sh "docker stop jsbmiwebapp | true"
-                sh "docker rm jsbmiwebapp | true"
+                sh "docker stop bsc-bkgrnd | true"
+                sh "docker rm bsc-bkgrnd | true"
              }
         }
         
         stage('Deploy to Docker Container'){
             steps{
                 //dir('BMI Calculator (JS)') {
-                    sh "docker run -d --name jsbmiwebapp -p 5000:80 ${IMAGE_NAME}:${TAG}" 
+                    sh "docker run -d --name bsc-bkgrnd -p 5000:80 ${IMAGE_NAME}:${TAG}" 
                 //}
             }
         }
@@ -301,6 +302,13 @@ pipeline {
                 sh "docker images -a"
                 sh "docker ps -a"
              }
+        }
+        
+        stage ('Snyk Kubernetes-Config Files Vulnerablity Scan') {
+            steps {
+                sh 'snyk iac test app-deployment-blue.yaml --report > BlueEnv-filevulnerabilityreport.txt || true'
+                sh 'snyk iac test app-deployment-green.yaml --report > GreenEnv-filevulnerabilityreport.txt || true'
+            }
         }
 
         stage("Sanity Check for Shifting to Production") {
@@ -345,7 +353,7 @@ pipeline {
                     // Always switch traffic based on DEPLOY_ENV
                     withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'k8s', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
                         sh '''
-                            kubectl patch service jsbmiwebapp-service -p "{\\"spec\\": {\\"selector\\": {\\"app\\": \\"jsbmiwebapp\\", \\"version\\": \\"''' + newEnv + '''\\"}}}"
+                            kubectl patch service bsc-bkgrnd-service -p "{\\"spec\\": {\\"selector\\": {\\"app\\": \\"bsc-bkgrnd\\", \\"version\\": \\"''' + newEnv + '''\\"}}}"
                         '''
                     }
                     echo "Traffic has been switched to the ${newEnv} environment."
@@ -400,7 +408,7 @@ pipeline {
                 from: 'jenkins@example.com', 
                 replyTo: 'jenkins@example.com', 
                 mimeType: 'text/html', 
-                attachmentsPattern: 'trivy-image-report.html, trivyfs.txt, trivyimage.txt, snykvulnerabilityreport.txt, snykloadedvulnerabilityreport.txt') 
+                attachmentsPattern: 'trivy-image-report.html, trivyfs.txt, trivyimage.txt, snykloadedvulnerabilityreport.txt,GreenEnv-filevulnerabilityreport.txt,BlueEnv-filevulnerabilityreport.txt, snyk-containertest-vulnerabilityreport.txt, snyk-containermonitor-vulnerabilityreport.txt') 
             } 
         } 
     }
