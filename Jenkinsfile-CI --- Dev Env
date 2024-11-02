@@ -146,14 +146,14 @@ pipeline {
         }
 
         stage('Snyk Loaded Vulnerability Test') {
-        steps {
+            steps {
                 withCredentials([string(credentialsId: 'snyk', variable: 'snyk')]) {
                    sh 'snyk auth $snyk'
                    sh 'snyk test --all-projects --report || true'
                    sh 'snyk code test --json-file-output=vuln1.json > snykloadedvulnerabilityreport.txt || true '
                 }   
             }
-        } 
+        }
         
         stage("Docker Image Building"){
             steps{
@@ -211,11 +211,12 @@ pipeline {
             }
         }
 
-        stage('Snyk Docker Image Vulnerability Scannning') {
-        steps {
+        stage('Snyk Docker Image/Container Vulnerability Scannning') {
+		steps {
                 withCredentials([string(credentialsId: 'snyk', variable: 'snyk')]) {
                    sh 'snyk auth $snyk'
-                   sh 'snyk container test yash5090/jsbmiwebapp:latest > snykvulnerabilityreport.txt --report || true '
+                   sh 'snyk container test yash5090/jsbmiwebapp:latest > snyk-containertest-vulnerabilityreport.txt --report || true '
+                   sh 'snyk container monitor yash5090/jsbmiwebapp:latest > snyk-containermonitor-vulnerabilityreport.txt || true'
                 }
             }
         }    
@@ -329,7 +330,7 @@ pipeline {
                 from: 'jenkins@example.com', 
                 replyTo: 'jenkins@example.com', 
                 mimeType: 'text/html', 
-                attachmentsPattern: 'trivy-image-report.html, trivyfs.txt, trivyimage.txt, snykvulnerabilityreport.txt, snykloadedvulnerabilityreport.txt') 
+                attachmentsPattern: 'trivy-image-report.html, trivyfs.txt, trivyimage.txt, snykvulnerabilityreport.txt, snykloadedvulnerabilityreport.txt, snyk-containertest-vulnerabilityreport.txt, snyk-containermonitor-vulnerabilityreport.txt') 
             } 
         } 
     }
@@ -346,4 +347,3 @@ stage('Result') {
             parameters: [choice(name: 'action', choices: ['Success'], description: 'Approve deployment')]
         }
     }
-    
